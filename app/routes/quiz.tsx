@@ -41,7 +41,13 @@ export default function Quiz() {
     const playSound = (url: string) => {
         const audio = new Audio(url);
         audio.currentTime = 0;
-        audio.play();
+        // 音量を少し下げておく（突然の大音量を防ぐUX）
+        audio.volume = 0.2;
+
+        // play() は Promise を返すので、エラーをキャッチして無視する（コンソールを汚さない）
+        audio.play().catch(e => {
+            console.warn("音声を再生できませんでした。ユーザーの操作が必要です:", e);
+        });
     };
 
     const handleAnswer = (choiceIdx: number) => {
@@ -122,13 +128,13 @@ export default function Quiz() {
                                 borderColor = "#38b2ac";
                                 if (isSelected) icon = "◯";
                                 playSound("/sounds/correct.mp3");
-                                navigator.vibrate([50, 30, 50]);
+                                navigator.vibrate?.([50, 30, 50]);
                             } else {
                                 bgColor = "#fff5f5"; // 不正解の赤
                                 borderColor = "#e53e3e";
                                 icon = "×";
                                 playSound("/sounds/incorrect.mp3");
-                                navigator.vibrate(400);
+                                navigator.vibrate?.(400);
                             }
                         }
 
