@@ -23,6 +23,9 @@ export default function Admin() {
     const [selectedQuiz, setSelectedQuiz] = useState<{ id: number, content: string } | null>(null);
     // トースト用ステート
     const [toastMessage, setToastMessage] = useState<string | null>(null);
+    // 画面リロードをなしで削除反映させるためのステート
+    const { questions: initialQuestions } = useLoaderData<typeof clientLoader>();
+    const [currentQuestions, setCurrentQuestions] = useState(initialQuestions);
 
     // トーストを表示して自動で消す関数
     const showToast = (message: string) => {
@@ -42,15 +45,14 @@ export default function Admin() {
     const confirmDelete = async () => {
         if (!selectedQuiz) return;
 
-        const { error } = await supabase.from("questions").delete().eq("id", selectedQuiz);
+        const { error } = await supabase.from("questions").delete().eq("id", selectedQuiz.id);
 
         if (error) {
             showToast("削除に失敗しました");
         } else {
             setIsModalOpen(false);
             showToast("クイズを削除しました");
-            setTimeout(() => window.location.reload(), 1000);
-
+            setCurrentQuestions(prev => prev.filter(q => q.id !== selectedQuiz.id));
         }
     };
 
@@ -63,9 +65,9 @@ export default function Admin() {
         <div style={containerStyle}>
             <div style={cardStyle}>
                 <div style={{ textAlign: "right", marginBottom: "10px" }}>
-                    <button style={{ color: "#999", fontSize: "12px", marginTop: "10px" }} onClick={() => navigate("/")} ><br />
+                    <button style={{ color: "#999", fontSize: "12px", marginTop: "10px" }} onClick={() => navigate("/")} >
                         トップページへ戻る
-                    </button>
+                    </button><br />
                     <span style={{ fontSize: "14px", color: "#666" }}>🙋ログイン中: <b>{authorName}</b></span>
                     <button onClick={logout} style={{ marginLeft: "10px", border: "none", background: "none", cursor: "pointer", color: "#007bff", textDecoration: "underline" }}>変更</button>
                 </div>
@@ -76,7 +78,7 @@ export default function Admin() {
                 </div>
 
                 <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
-                    {questions.map((q: any) => (
+                    {currentQuestions.map((q: any) => (
                         <div key={q.id} style={listItemStyle}>
                             <div style={{ flex: 1 }}>
                                 <div style={{ fontWeight: "bold" }}>{q.content}</div>
