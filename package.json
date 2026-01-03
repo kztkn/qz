@@ -1,11 +1,11 @@
 {
-  "name": "my-quiz-app",
+  "name": "quiz-app",
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "react-router build",
     "dev": "react-router dev",
-    "start": "react-router-serve ./build/server/index.js",
+    "build": "react-router build && cp build/client/index.html build/client/404.html",
+    "start": "react-router-serve build/client",
     "typecheck": "react-router typegen && tsc"
   },
   "dependencies": {
