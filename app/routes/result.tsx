@@ -1,17 +1,20 @@
-import { useLocation, Link } from "react-router";
+import { useLocation, Link, useNavigate } from "react-router";
 
 export default function Result() {
     const location = useLocation();
+    const navigate = useNavigate();
+
     // stateがない場合の初期値
-    const { score, total } = location.state || { score: 0, total: 0 };
+    const { score, total, limit } = location.state || { score: 0, total: 0, limit: 10 };
+    const retryPath = limit ? `/quiz?limit=${limit}` : "/quiz";
     const percentage = total > 0 ? Math.round((score / total) * 100) : 0;
 
     // スコアに応じたメッセージ
     const getMessage = () => {
-        if (percentage === 100) return "完璧です！全問正解！";
-        if (percentage >= 70) return "すごい！あともう少し！";
-        if (percentage >= 40) return "いい感じですね！";
-        return "次はもっと頑張りましょう！";
+        if (percentage === 100) return "やるじゃん！全問正解！";
+        if (percentage >= 70) return "悪くない";
+        if (percentage >= 40) return "まだまだだね";
+        return "チーン・・・！";
     };
 
     return (
@@ -30,12 +33,9 @@ export default function Result() {
                 <p style={messageStyle}>{getMessage()}</p>
 
                 <div style={buttonGroupStyle}>
-                    <Link to="/quiz" style={primaryButtonStyle}>
+                    <button onClick={() => navigate(retryPath)} style={primaryButtonStyle}>
                         もう一度挑戦する
-                    </Link>
-                    <Link to="/create" style={secondaryButtonStyle}>
-                        新しいクイズを作る
-                    </Link>
+                    </button>
                     <Link to="/" style={textLinkStyle}>
                         トップページに戻る
                     </Link>
@@ -45,102 +45,17 @@ export default function Result() {
     );
 }
 
-// --- スタイル定義 (Quiz/Createと共通) ---
+// --- スタイル定義 (最新スタイル基準) ---
+const containerStyle: React.CSSProperties = { backgroundColor: "#f8f9fa", minHeight: "100vh", padding: "40px 15px", fontFamily: "sans-serif", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", boxSizing: "border-box" };
+const cardStyle: React.CSSProperties = { width: "100%", maxWidth: "500px", backgroundColor: "#fff", padding: "40px 24px", borderRadius: "24px", boxShadow: "0 10px 30px rgba(0,0,0,0.08)", boxSizing: "border-box", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center" };
+const titleStyle: React.CSSProperties = { fontSize: "1rem", color: "#aaa", textTransform: "uppercase", letterSpacing: "2px", marginBottom: "30px", fontWeight: "bold" };
+const resultSectionStyle: React.CSSProperties = { marginBottom: "30px", display: "flex", flexDirection: "column", alignItems: "center" };
+const percentageCircleStyle: React.CSSProperties = { fontSize: "5rem", fontWeight: "900", color: "#007bff", display: "flex", justifyContent: "center", alignItems: "baseline", margin: "10px 0", lineHeight: "1" };
+const percentageNumberStyle: React.CSSProperties = { letterSpacing: "-2px" };
+const percentageUnitStyle: React.CSSProperties = { fontSize: "1.8rem", marginLeft: "4px", fontWeight: "700" };
+const scoreTextStyle: React.CSSProperties = { fontSize: "1.2rem", color: "#666", marginTop: "10px", fontWeight: "600" };
+const messageStyle: React.CSSProperties = { fontSize: "1.5rem", fontWeight: "800", color: "#333", marginBottom: "40px", lineHeight: "1.4" };
+const buttonGroupStyle: React.CSSProperties = { display: "flex", flexDirection: "column", gap: "14px", width: "100%" };
 
-const containerStyle: React.CSSProperties = {
-    backgroundColor: "#f8f9fa",
-    minHeight: "100vh",
-    padding: "40px 20px",
-    fontFamily: "'Helvetica Neue', Arial, sans-serif",
-    display: "flex",
-    alignItems: "center",
-};
-
-const cardStyle: React.CSSProperties = {
-    maxWidth: "500px",
-    width: "100%",
-    margin: "0 auto",
-    backgroundColor: "#fff",
-    padding: "40px 30px",
-    borderRadius: "16px",
-    boxShadow: "0 10px 25px rgba(0,0,0,0.05)",
-    textAlign: "center",
-};
-
-const titleStyle: React.CSSProperties = {
-    fontSize: "1.2rem",
-    color: "#888",
-    textTransform: "uppercase",
-    letterSpacing: "2px",
-    marginBottom: "30px",
-};
-
-const resultSectionStyle: React.CSSProperties = {
-    marginBottom: "30px",
-};
-
-const percentageCircleStyle: React.CSSProperties = {
-    fontSize: "4rem",
-    fontWeight: "800",
-    color: "#007bff",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "baseline",
-};
-
-const percentageNumberStyle: React.CSSProperties = {
-    lineHeight: "1",
-};
-
-const percentageUnitStyle: React.CSSProperties = {
-    fontSize: "1.5rem",
-    marginLeft: "4px",
-};
-
-const scoreTextStyle: React.CSSProperties = {
-    fontSize: "1.1rem",
-    color: "#555",
-    marginTop: "10px",
-};
-
-const messageStyle: React.CSSProperties = {
-    fontSize: "1.3rem",
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: "40px",
-};
-
-const buttonGroupStyle: React.CSSProperties = {
-    display: "flex",
-    flexDirection: "column",
-    gap: "12px",
-};
-
-const primaryButtonStyle: React.CSSProperties = {
-    padding: "16px",
-    backgroundColor: "#007bff",
-    color: "#white",
-    textDecoration: "none",
-    borderRadius: "10px",
-    fontWeight: "bold",
-    fontSize: "16px",
-    boxShadow: "0 4px 6px rgba(0,123,255,0.2)",
-};
-
-const secondaryButtonStyle: React.CSSProperties = {
-    padding: "16px",
-    backgroundColor: "#f0f7ff",
-    color: "#007bff",
-    textDecoration: "none",
-    borderRadius: "10px",
-    fontWeight: "bold",
-    fontSize: "16px",
-    border: "1px solid #cce5ff",
-};
-
-const textLinkStyle: React.CSSProperties = {
-    marginTop: "10px",
-    color: "#999",
-    textDecoration: "none",
-    fontSize: "14px",
-};
+const primaryButtonStyle: React.CSSProperties = { width: "100%", padding: "18px", backgroundColor: "#007bff", color: "#fff", border: "none", borderRadius: "16px", fontWeight: "bold", fontSize: "18px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 15px rgba(0,123,255,0.3)", transition: "transform 0.1s active" };
+const textLinkStyle: React.CSSProperties = { marginTop: "20px", color: "#999", textDecoration: "none", fontSize: "14px", borderBottom: "1px solid #eee", paddingBottom: "2px" };

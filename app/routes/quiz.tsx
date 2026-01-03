@@ -1,16 +1,15 @@
 import { useState } from "react";
-import { useNavigate, useLoaderData, useSearchParams, Link } from "react-router";
+import { useNavigate, useLoaderData, Link } from "react-router";
 import { supabase } from "app/lib/supabase";
 
 export async function clientLoader({ request }: { request: Request }) {
     const url = new URL(request.url);
     const limitParam = url.searchParams.get("limit");
     const limitCount = limitParam ? parseInt(limitParam, 10) : 100;
+    // RPCを使用してランダムな問題を取得
     const { data, error } = await supabase.rpc('get_random_questions', { limit_count: limitCount });
 
-    if (error) {
-        throw new Error("データの取得に失敗しました");
-    }
+    if (error) throw new Error("データの取得に失敗しました");
     return { questions: data };
 }
 
@@ -26,8 +25,9 @@ export default function Quiz() {
         return (
             <div style={containerStyle}>
                 <div style={cardStyle}>
-                    <p>クイズが見つかりませんでした。</p>
-                    <Link to="/create" style={{ color: "#007bff" }}>クイズを作ってみる</Link>
+                    <div style={{ fontSize: "50px", marginBottom: "20px" }}>🔍</div>
+                    <p style={{ color: "#666", marginBottom: "20px" }}>クイズが見つかりませんでした。</p>
+                    <Link to="/create" style={primaryButtonStyle}>クイズを作ってみる</Link>
                 </div>
             </div>
         );
@@ -43,7 +43,7 @@ export default function Quiz() {
             setScore(nextScore);
             setCurrentIdx(currentIdx + 1);
         } else {
-            navigate("/result", { state: { score: nextScore, total: questions.length } });
+            navigate("/result", { state: { score: nextScore, total: questions.length, limit: questions.length } });
         }
     };
 
@@ -59,27 +59,25 @@ export default function Quiz() {
                 <h2 style={questionTitleStyle}>{currentQuestion.content}</h2>
 
                 {/* 選択肢リスト */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                <div style={choicesContainerStyle}>
                     {currentQuestion.choices.map((choice: string, i: number) => (
                         <button
                             key={i}
                             onClick={() => handleAnswer(i)}
                             style={choiceButtonStyle}
-                            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#f0f7ff")}
-                            onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#fff")}
                         >
                             <span style={choiceNumberStyle}>{i + 1}</span>
-                            {choice}
+                            <span style={{ flex: 1 }}>{choice}</span>
                         </button>
                     ))}
                 </div>
 
-                {/* 問題文 */}
-                <div style={progressStyle}>作成者: {currentQuestion.author_name}</div>
+                {/* 作成者情報 */}
+                <div style={authorInfoStyle}>作成者: {currentQuestion.author_name}</div>
 
                 {/* 中断リンク */}
-                <div style={{ textAlign: "center", marginTop: "24px" }}>
-                    <Link to="/" style={{ color: "#999", textDecoration: "none", fontSize: "14px" }}>
+                <div style={{ marginTop: "40px" }}>
+                    <Link to="/" style={exitLinkStyle}>
                         クイズを中断して戻る
                     </Link>
                 </div>
@@ -88,67 +86,14 @@ export default function Quiz() {
     );
 }
 
-// --- スタイル定義 (作成フォームと統一) ---
-
-const containerStyle: React.CSSProperties = {
-    backgroundColor: "#f8f9fa",
-    minHeight: "100vh",
-    padding: "40px 20px",
-    fontFamily: "'Helvetica Neue', Arial, sans-serif",
-    boxSizing: "border-box",
-};
-
-const cardStyle: React.CSSProperties = {
-    maxWidth: "600px",
-    margin: "0 auto",
-    backgroundColor: "#fff",
-    padding: "30px",
-    borderRadius: "12px",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-};
-
-const progressStyle: React.CSSProperties = {
-    color: "#666",
-    fontSize: "14px",
-    fontWeight: "bold",
-    marginBottom: "10px",
-    textAlign: "center",
-    textTransform: "uppercase",
-    letterSpacing: "1px",
-};
-
-const questionTitleStyle: React.CSSProperties = {
-    fontSize: "1.5rem",
-    color: "#333",
-    textAlign: "center",
-    marginBottom: "30px",
-    lineHeight: "1.4",
-};
-
-const choiceButtonStyle: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    padding: "16px 20px",
-    fontSize: "16px",
-    cursor: "pointer",
-    backgroundColor: "#fff",
-    border: "2px solid #eee",
-    borderRadius: "10px",
-    textAlign: "left",
-    transition: "all 0.2s ease",
-    color: "#444",
-    fontWeight: "500",
-};
-
-const choiceNumberStyle: React.CSSProperties = {
-    backgroundColor: "#eee",
-    color: "#666",
-    width: "28px",
-    height: "28px",
-    borderRadius: "50%",
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: "15px",
-    fontSize: "14px",
-};
+// --- スタイル定義 (最新スタイル基準) ---
+const containerStyle: React.CSSProperties = { backgroundColor: "#f8f9fa", minHeight: "100vh", padding: "40px 15px", fontFamily: "sans-serif", display: "flex", flexDirection: "column", alignItems: "center", boxSizing: "border-box" };
+const cardStyle: React.CSSProperties = { width: "100%", maxWidth: "500px", backgroundColor: "#fff", padding: "40px 24px", borderRadius: "24px", boxShadow: "0 10px 30px rgba(0,0,0,0.05)", boxSizing: "border-box", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center" };
+const progressStyle: React.CSSProperties = { color: "#888", fontSize: "13px", fontWeight: "bold", marginBottom: "15px", letterSpacing: "1px", textTransform: "uppercase" };
+const questionTitleStyle: React.CSSProperties = { fontSize: "1.6rem", color: "#333", marginBottom: "35px", lineHeight: "1.5", fontWeight: "800", wordBreak: "break-word" };
+const choicesContainerStyle: React.CSSProperties = { display: "flex", flexDirection: "column", gap: "12px", width: "100%" };
+const choiceButtonStyle: React.CSSProperties = { width: "100%", display: "flex", alignItems: "center", padding: "18px 20px", fontSize: "16px", cursor: "pointer", backgroundColor: "#fff", border: "2px solid #eee", borderRadius: "16px", transition: "all 0.2s ease", color: "#444", fontWeight: "600", boxSizing: "border-box", textAlign: "left", outline: "none" };
+const choiceNumberStyle: React.CSSProperties = { backgroundColor: "#f0f0f0", color: "#888", width: "30px", height: "30px", borderRadius: "50%", display: "inline-flex", alignItems: "center", justifyContent: "center", marginRight: "15px", fontSize: "14px", flexShrink: 0, fontWeight: "bold" };
+const authorInfoStyle: React.CSSProperties = { marginTop: "30px", color: "#bbb", fontSize: "12px", fontStyle: "italic" };
+const exitLinkStyle: React.CSSProperties = { color: "#999", textDecoration: "none", fontSize: "14px", borderBottom: "1px solid #eee", paddingBottom: "2px" };
+const primaryButtonStyle: React.CSSProperties = { padding: "16px 30px", backgroundColor: "#007bff", color: "#fff", textDecoration: "none", borderRadius: "14px", fontWeight: "bold", display: "inline-flex", justifyContent: "center", alignItems: "center" };
