@@ -1,10 +1,20 @@
 import { Link } from "react-router";
+import { useMemo } from "react";
 
 export default function Index() {
+
+    const randomEmoji = useMemo(() => {
+        const emojis = ["🐢", "🐰", "🦁", "🦊", "🦉", "🦄", "🦖", "🐙"];
+
+        const isRare = Math.random() < 0.01; // 1%の確率
+        if (isRare) return "👑";
+        return emojis[Math.floor(Math.random() * emojis.length)];
+    }, []);
+
     return (
         <div style={containerStyle}>
             <div style={cardStyle}>
-                <div style={iconContainerStyle}>🐢</div>
+                <div style={iconContainerStyle}>{randomEmoji}</div>
                 <h1 style={titleStyle}>みんなのクイズ</h1>
                 <p style={descriptionStyle}>
                     何問正解できるかな？<br />

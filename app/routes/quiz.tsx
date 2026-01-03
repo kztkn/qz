@@ -17,8 +17,12 @@ clientLoader.hydrate = true;
 
 export default function Quiz() {
     const { questions } = useLoaderData<{ questions: any[] }>();
+    const [selectedId, setSelectedId] = useState<number | null>(null); // 選択された選択肢のインデックス
     const [currentIdx, setCurrentIdx] = useState(0);
     const [score, setScore] = useState(0);
+    const [history, setHistory] = useState<any[]>([]);
+    const [combo, setCombo] = useState(0); // 現在のコンボ
+    const [maxCombo, setMaxCombo] = useState(0); // 最大コンボ
     const navigate = useNavigate();
 
     if (!questions || questions.length === 0) {
@@ -34,22 +38,65 @@ export default function Quiz() {
     }
 
     const currentQuestion = questions[currentIdx];
+    const playSound = (url: string) => {
+        const audio = new Audio(url);
+        audio.currentTime = 0;
+        audio.play();
+    };
 
     const handleAnswer = (choiceIdx: number) => {
+        if (selectedId !== null) return; // 連打防止
+        setSelectedId(choiceIdx); // 選択した瞬間、ボタンの色を変える
+
         const isCorrect = choiceIdx === currentQuestion.correct_index;
         const nextScore = isCorrect ? score + 1 : score;
 
-        if (currentIdx + 1 < questions.length) {
-            setScore(nextScore);
-            setCurrentIdx(currentIdx + 1);
-        } else {
-            navigate("/result", { state: { score: nextScore, total: questions.length, limit: questions.length } });
-        }
+        let nextCombo = isCorrect ? combo + 1 : 0;
+        setCombo(nextCombo);
+        if (nextCombo > maxCombo) setMaxCombo(nextCombo);
+
+        // 回答履歴を保存
+        const newHistory = [
+            ...history,
+            {
+                question: currentQuestion.content,
+                choices: currentQuestion.choices,
+                correctIndex: currentQuestion.correct_index,
+                userIndex: choiceIdx,
+                isCorrect: isCorrect
+            }
+        ];
+        setHistory(newHistory);
+        setTimeout(() => {
+            if (currentIdx + 1 < questions.length) {
+                setScore(nextScore);
+                setCurrentIdx(currentIdx + 1);
+                setSelectedId(null); // 選択状態をリセット
+            } else {
+                navigate("/result", {
+                    state: {
+                        score: nextScore,
+                        total: questions.length,
+                        limit: questions.length,
+                        history: newHistory,
+                        maxCombo: nextCombo > maxCombo ? nextCombo : maxCombo,
+                    }
+                });
+            }
+        }, 500); // 0.5秒だけ「正解・不正解」の余韻を作る
     };
 
     return (
         <div style={containerStyle}>
             <div style={cardStyle}>
+                {/* コンボ表示：2コンボ以上で表示 */}
+                <div style={{ height: "40px" }}>
+                    {combo >= 2 && (
+                        <div style={comboBadgeStyle}>
+                            {combo} COMBO {"🔥".repeat(Math.min(combo, 5))}
+                        </div>
+                    )}
+                </div>
                 {/* 進捗表示 */}
                 <div style={progressStyle}>
                     Question {currentIdx + 1} of {questions.length}
@@ -60,20 +107,49 @@ export default function Quiz() {
 
                 {/* 選択肢リスト */}
                 <div style={choicesContainerStyle}>
-                    {currentQuestion.choices.map((choice: string, i: number) => (
-                        <button
-                            key={i}
-                            onClick={() => handleAnswer(i)}
-                            style={choiceButtonStyle}
-                        >
-                            <span style={choiceNumberStyle}>{i + 1}</span>
-                            <span style={{ flex: 1 }}>{choice}</span>
-                        </button>
-                    ))}
+                    {currentQuestion.choices.map((choice: string, i: number) => {
+                        // 状態に応じたスタイル決定
+                        const isSelected = selectedId === i;
+                        const isCorrectAnswer = i === currentQuestion.correct_index;
+
+                        let bgColor = "#fff";
+                        let borderColor = "#eee";
+                        let icon = (i + 1).toString();
+
+                        if (selectedId !== null && isSelected) {
+                            if (isCorrectAnswer) {
+                                bgColor = "#e6fffa"; // 正解の緑
+                                borderColor = "#38b2ac";
+                                if (isSelected) icon = "◯";
+                                playSound("/sounds/correct.mp3");
+                                navigator.vibrate([50, 30, 50]);
+                            } else {
+                                bgColor = "#fff5f5"; // 不正解の赤
+                                borderColor = "#e53e3e";
+                                icon = "×";
+                                playSound("/sounds/incorrect.mp3");
+                                navigator.vibrate(400);
+                            }
+                        }
+
+                        return (
+                            <button
+                                key={i}
+                                onClick={() => handleAnswer(i)}
+                                disabled={selectedId !== null}
+                                style={{ ...choiceButtonStyle, backgroundColor: bgColor, borderColor: borderColor }}
+                            >
+                                <span style={{ ...choiceNumberStyle, backgroundColor: isSelected || (selectedId !== null && isCorrectAnswer) ? "transparent" : "#f0f0f0" }}>
+                                    {icon}
+                                </span>
+                                {choice}
+                            </button>
+                        );
+                    })}
                 </div>
 
                 {/* 作成者情報 */}
-                <div style={authorInfoStyle}>作成者: {currentQuestion.author_name}</div>
+                <div style={authorInfoStyle}>by {currentQuestion.author_name}</div>
 
                 {/* 中断リンク */}
                 <div style={{ marginTop: "40px" }}>
@@ -82,7 +158,7 @@ export default function Quiz() {
                     </Link>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }
 
@@ -97,3 +173,4 @@ const choiceNumberStyle: React.CSSProperties = { backgroundColor: "#f0f0f0", col
 const authorInfoStyle: React.CSSProperties = { marginTop: "30px", color: "#bbb", fontSize: "12px", fontStyle: "italic" };
 const exitLinkStyle: React.CSSProperties = { color: "#999", textDecoration: "none", fontSize: "14px", borderBottom: "1px solid #eee", paddingBottom: "2px" };
 const primaryButtonStyle: React.CSSProperties = { padding: "16px 30px", backgroundColor: "#007bff", color: "#fff", textDecoration: "none", borderRadius: "14px", fontWeight: "bold", display: "inline-flex", justifyContent: "center", alignItems: "center" };
+const comboBadgeStyle: React.CSSProperties = { backgroundColor: "#ff4757", color: "white", padding: "4px 12px", borderRadius: "20px", fontSize: "14px", fontWeight: "900", display: "inline-block", animation: "bounce 0.4s infinite alternate" };
