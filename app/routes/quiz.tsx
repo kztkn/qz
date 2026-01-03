@@ -2,9 +2,9 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 
 const QUESTIONS = [
-    { q: "React Router v7 のベースとなったフレームワークは？", a: ["Next.js", "Remix", "Vue.js"], correct: 1 },
-    { q: "GitHub Pages でSPAを公開する際に必要なファイルは？", a: ["404.html", "500.html", "index.php"], correct: 0 },
-    { q: "React で状態を管理するための Hook は？", a: ["useEffect", "useContext", "useState"], correct: 2 },
+    { q: "正しい生年月日は？", a: ["1996/02/04", "1996/02/02", "1996/02/06", "1988/06/11"], correct: 1 },
+    { q: "特技は？", a: ["スプーン曲げ", "トランプマジック", "ルービックキューブ", "醤油のイッキ飲み"], correct: 2 },
+    { q: "麻雀で好きな役は？", a: ["七対子", "混一色", "三色同順", "破道の三十三 蒼火墜"], correct: 2 },
 ];
 
 export default function Quiz() {
