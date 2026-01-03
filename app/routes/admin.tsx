@@ -1,6 +1,8 @@
-import { useState, useEffect } from "react"; // useEffectを追加
+import { useState } from "react";
 import { Link, useLoaderData, useNavigate } from "react-router";
 import { supabase } from "app/lib/supabase";
+import { useAuthor } from "app/hooks/useAuthor"
+import { AuthorGuard } from "app/components/AuthorGuard";
 
 export async function clientLoader() {
     const { data, error } = await supabase
@@ -14,10 +16,11 @@ export async function clientLoader() {
 export default function Admin() {
     const { questions } = useLoaderData<typeof clientLoader>();
     const navigate = useNavigate();
+    const { authorName, saveName, logout } = useAuthor();
 
     // モーダル管理用のステート
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [selectedId, setSelectedId] = useState<number | null>(null);
+    const [selectedQuiz, setSelectedQuiz] = useState<{ id: number, content: string } | null>(null);
     // トースト用ステート
     const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -30,16 +33,16 @@ export default function Admin() {
     };
 
     // 削除ボタンが押された時
-    const openDeleteModal = (id: number) => {
-        setSelectedId(id);
+    const openDeleteModal = (id: number, content: string) => {
+        setSelectedQuiz({ id, content });
         setIsModalOpen(true);
     };
 
     // 実際の削除処理
     const confirmDelete = async () => {
-        if (!selectedId) return;
+        if (!selectedQuiz) return;
 
-        const { error } = await supabase.from("questions").delete().eq("id", selectedId);
+        const { error } = await supabase.from("questions").delete().eq("id", selectedQuiz);
 
         if (error) {
             showToast("削除に失敗しました");
@@ -51,9 +54,22 @@ export default function Admin() {
         }
     };
 
+
+    if (!authorName) {
+        return <AuthorGuard onSave={saveName} />;
+    }
+
     return (
         <div style={containerStyle}>
             <div style={cardStyle}>
+                <div style={{ textAlign: "right", marginBottom: "10px" }}>
+                    <button style={{ color: "#999", fontSize: "12px", marginTop: "10px" }} onClick={() => navigate("/")} ><br />
+                        トップページへ戻る
+                    </button>
+                    <span style={{ fontSize: "14px", color: "#666" }}>🙋ログイン中: <b>{authorName}</b></span>
+                    <button onClick={logout} style={{ marginLeft: "10px", border: "none", background: "none", cursor: "pointer", color: "#007bff", textDecoration: "underline" }}>変更</button>
+                </div>
+
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "30px" }}>
                     <h1 style={{ margin: 0, fontSize: "1.5rem" }}>クイズ管理</h1>
                     <Link to="/create" style={createButtonStyle}>＋ 新規作成</Link>
@@ -64,16 +80,24 @@ export default function Admin() {
                         <div key={q.id} style={listItemStyle}>
                             <div style={{ flex: 1 }}>
                                 <div style={{ fontWeight: "bold" }}>{q.content}</div>
+                                <div style={{ fontSize: "12px", color: "#888" }}>作成者: {q.author_name}</div>
                             </div>
                             <div style={{ display: "flex", gap: "10px" }}>
-                                <button onClick={() => navigate(`/edit/${q.id}`)} style={editButtonStyle}>編集</button>
-                                <button onClick={() => openDeleteModal(q.id)} style={deleteButtonStyle}>削除</button>
+                                {q.is_admin_only ? (
+                                    <span style={disabledButtonStyle}>編集</span>
+                                ) : (
+                                    <button onClick={() => navigate(`/edit/${q.id}`)} style={editButtonStyle}>編集</button>
+
+                                )}
+                                {q.is_admin_only ? (
+                                    <span style={disabledButtonStyle}>削除</span>
+                                ) : (
+                                    <button onClick={() => openDeleteModal(q.id, q.content)} style={deleteButtonStyle}>削除</button>
+                                )}
                             </div>
                         </div>
                     ))}
                 </div>
-
-
             </div>
 
             {/* --- トースト通知 --- */}
@@ -85,11 +109,14 @@ export default function Admin() {
                 </div>
             )}
             {/* --- カスタムモーダル --- */}
-            {isModalOpen && (
+            {isModalOpen && selectedQuiz && (
                 <div style={modalOverlayStyle}>
                     <div style={modalContentStyle}>
                         <h2 style={{ marginTop: 0 }}>削除の確認</h2>
-                        <p>このクイズを完全に削除してもよろしいですか？<br /><small>この操作は取り消せません。</small></p>
+                        <p>以下のクイズを削除してもよろしいですか？<br /><small>この操作は取り消せません。</small></p>
+                        <div style={targetQuizBoxStyle}>
+                            「{selectedQuiz.content}」
+                        </div>
                         <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "20px" }}>
                             <button onClick={() => setIsModalOpen(false)} style={cancelButtonStyle}>キャンセル</button>
                             <button onClick={confirmDelete} style={confirmDeleteButtonStyle}>削除する</button>
@@ -164,3 +191,5 @@ const listItemStyle: React.CSSProperties = { display: "flex", justifyContent: "s
 const createButtonStyle: React.CSSProperties = { padding: "8px 16px", backgroundColor: "#28a745", color: "#fff", textDecoration: "none", borderRadius: "6px", fontSize: "14px", fontWeight: "bold" };
 const editButtonStyle: React.CSSProperties = { padding: "6px 12px", backgroundColor: "#ffc107", border: "none", borderRadius: "4px", cursor: "pointer" };
 const deleteButtonStyle: React.CSSProperties = { padding: "6px 12px", backgroundColor: "#dc3545", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer" };
+const disabledButtonStyle: React.CSSProperties = { ...deleteButtonStyle, backgroundColor: "#e9ecef", color: "#adb5bd", cursor: "not-allowed", border: "1px solid #dee2e6" };
+const targetQuizBoxStyle: React.CSSProperties = { backgroundColor: "#f8f9fa", padding: "12px", borderRadius: "8px", borderLeft: "4px solid #dc3545", textAlign: "left", fontSize: "14px", fontWeight: "bold", marginBottom: "15px", color: "#333", wordBreak: "break-all" };

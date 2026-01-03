@@ -1,9 +1,12 @@
 import { useState } from "react";
-import { useNavigate, useLoaderData, Link } from "react-router";
+import { useNavigate, useLoaderData, useSearchParams, Link } from "react-router";
 import { supabase } from "app/lib/supabase";
 
-export async function clientLoader() {
-    const { data, error } = await supabase.rpc('get_random_questions', { limit_count: 10 });
+export async function clientLoader({ request }: { request: Request }) {
+    const url = new URL(request.url);
+    const limitParam = url.searchParams.get("limit");
+    const limitCount = limitParam ? parseInt(limitParam, 10) : 100;
+    const { data, error } = await supabase.rpc('get_random_questions', { limit_count: limitCount });
 
     if (error) {
         throw new Error("データの取得に失敗しました");
@@ -70,6 +73,9 @@ export default function Quiz() {
                         </button>
                     ))}
                 </div>
+
+                {/* 問題文 */}
+                <div style={progressStyle}>作成者: {currentQuestion.author_name}</div>
 
                 {/* 中断リンク */}
                 <div style={{ textAlign: "center", marginTop: "24px" }}>

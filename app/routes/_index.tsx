@@ -5,16 +5,27 @@ export default function Index() {
         <div style={containerStyle}>
             <div style={cardStyle}>
                 <div style={iconContainerStyle}>🐢</div>
-                <h1 style={titleStyle}>かずとクイズ</h1>
+                <h1 style={titleStyle}>みんなのクイズ</h1>
                 <p style={descriptionStyle}>
-                    全問正解できるかな？<br />
+                    何問正解できるかな？<br />
                     オリジナルクイズの作成もできるよ
                 </p>
 
                 <div style={buttonGroupStyle}>
-                    <Link to="/quiz" style={primaryButtonStyle}>
-                        クイズを始める
-                    </Link>
+                    <h3 style={{ fontSize: "18px", color: "#888", marginBottom: "5px" }}>クイズに挑戦</h3>
+                    <div style={{ display: "flex", gap: "10px" }}>
+                        <Link to="/quiz?limit=5" style={{ ...primaryButtonStyle, flex: 1, padding: "14px" }}>
+                            5問
+                        </Link>
+                        <Link to="/quiz?limit=10" style={{ ...primaryButtonStyle, flex: 1, padding: "14px" }}>
+                            10問
+                        </Link>
+                        <Link to="/quiz" style={{ ...primaryButtonStyle, flex: 1, padding: "14px", backgroundColor: "#333" }}>
+                            全問
+                        </Link>
+                    </div>
+
+                    <hr style={{ width: "100%", border: "none", borderTop: "1px solid #eee", margin: "10px 0" }} />
 
                     <Link to="/create" style={secondaryButtonStyle}>
                         クイズを作成する
@@ -22,7 +33,10 @@ export default function Index() {
                 </div>
 
                 <div style={footerStyle}>
-                    Powered by Supabase & React Router
+                    Powered by Supabase & React Router<br />
+                    <Link to="/admin" style={{ color: "#999", fontSize: "12px", marginTop: "10px" }}>
+                        管理画面
+                    </Link>
                 </div>
             </div>
         </div>

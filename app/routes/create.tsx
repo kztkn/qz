@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams, Link } from "react-router";
 import { supabase } from "app/lib/supabase";
+import { useAuthor } from "app/hooks/useAuthor"
+import { AuthorGuard } from "app/components/AuthorGuard";
 
 export default function CreateOrEditQuiz() {
     const { id } = useParams(); // URLに id があれば「編集モード」
     const navigate = useNavigate();
-
+    const { authorName, saveName, logout } = useAuthor();
     const [content, setContent] = useState("");
     const [choices, setChoices] = useState(["", "", "", ""]);
     const [correctIndex, setCorrectIndex] = useState(0);
@@ -21,7 +23,6 @@ export default function CreateOrEditQuiz() {
         setTimeout(() => setToastMessage(null), 3000);
     };
 
-    // ★追加: フォームをリセットする関数（続けて作成用）
     const resetForm = () => {
         setContent("");
         setChoices(["", "", "", ""]);
@@ -59,11 +60,11 @@ export default function CreateOrEditQuiz() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
-
         const quizData = {
             content,
             choices,
             correct_index: correctIndex,
+            author_name: authorName,
         };
 
         let error;
@@ -94,14 +95,27 @@ export default function CreateOrEditQuiz() {
 
     if (fetching) return <div style={containerStyle}>読み込み中...</div>;
 
+    if (!authorName) {
+        return <AuthorGuard onSave={saveName} />;
+    }
     return (
         <div style={containerStyle}>
             <div style={cardStyle}>
+                <div style={{ textAlign: "right", marginBottom: "10px" }}>
+                    <span style={{ fontSize: "14px", color: "#666" }}>🙋ログイン中: <b>{authorName}</b></span>
+                    <button onClick={logout} style={{ marginLeft: "10px", border: "none", background: "none", cursor: "pointer", color: "#007bff", textDecoration: "underline" }}>変更</button>
+                </div>
                 <h1 style={{ textAlign: "center", color: "#333", marginBottom: "30px" }}>
                     {id ? "クイズを編集" : "クイズを作成"}
                 </h1>
 
                 <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+                    <div style={warningBoxStyle}>
+                        <p style={{ margin: 0, fontSize: "13px", lineHeight: "1.5" }}>
+                            <strong>⚠️ 投稿に関するご注意</strong><br />
+                            このクイズはインターネット上に公開されます。個人情報、誹謗中傷、公序良俗に反する内容は絶対に入力しないでください。
+                        </p>
+                    </div>
                     {/* 問題文セクション */}
                     <div>
                         <label style={labelStyle}>問題文</label>
@@ -141,6 +155,9 @@ export default function CreateOrEditQuiz() {
                     <button type="submit" disabled={loading} style={buttonStyle(loading)}>
                         {loading ? "保存中..." : id ? "更新を保存する" : "クイズを保存する"}
                     </button>
+                    <p style={{ textAlign: "center", fontSize: "11px", color: "#999", marginTop: "-15px" }}>
+                        「保存」を押すことで、インターネット上に公開されます。
+                    </p>
                 </form>
 
                 <div style={{ textAlign: "center", marginTop: "24px" }}>
@@ -156,7 +173,6 @@ export default function CreateOrEditQuiz() {
                     </div>
                 )}
             </div>
-            {/* ★追加: 投稿成功モーダル --- */}
             {isSuccessModalOpen && (
                 <div style={modalOverlayStyle}>
                     <div style={modalContentStyle}>
@@ -261,6 +277,7 @@ if (typeof document !== "undefined") {
   `;
     document.head.appendChild(styleTag);
 }
+const warningBoxStyle: React.CSSProperties = { backgroundColor: "#fff3cd", color: "#856404", padding: "10px", borderRadius: "8px", border: "1px solid #ffeeba", marginBottom: "12px", };
 const headerStyle: React.CSSProperties = { textAlign: "center", marginBottom: "30px" };
 const formStyle: React.CSSProperties = { display: "flex", flexDirection: "column", gap: "24px" };
 const containerStyle: React.CSSProperties = { backgroundColor: "#f8f9fa", minHeight: "100vh", padding: "40px 20px", fontFamily: "sans-serif" };
